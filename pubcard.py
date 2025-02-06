@@ -481,12 +481,12 @@ if __name__ == "__main__":
     parser.add_argument('--first', type=str, required=True, help='Author first name to search')
     parser.add_argument('--last', type=str, required=True, help='Last name of author to search')
     parser.add_argument('--middle', type=str, required=True, help='Middle initial of author')
-    parser.add_argument('--output1', type=str, required=True, help='output first PDF file with results')
+    parser.add_argument('--output', type=str, required=True, help='output first PDF file with results')
     parser.add_argument('--outputImage', type=str, required=True, help='output image')
     parser.add_argument('--topic', type=str, required=True, help='topic of research focus')
     args = parser.parse_args()
 
-    output_pdf_file1 = args.output1
+    output_pdf_file = args.output
     output_image = args.outputImage
     topic = args.topic
     first = args.first
@@ -496,7 +496,7 @@ if __name__ == "__main__":
     end_date = datetime.now().strftime("%Y/%m/%d")
     max_results = 100  # Maximum number of results to fetch
 
-    search_pubmed(last, first, middle, start_date, end_date, max_results, output_pdf_file1, output_image, topic)
+    search_pubmed(last, first, middle, start_date, end_date, max_results, output_pdf_file, output_image, topic)
 
 
 

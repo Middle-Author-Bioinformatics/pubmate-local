@@ -2,7 +2,7 @@
 eval "$(/home/ark/miniconda3/bin/conda shell.bash hook)"
 conda activate base  # Activate the base environment where `boto3` is installed
 
-exec > >(tee -i /home/ark/MAB/magiclamp/magiclamp_looper.log)
+exec > >(tee -i /home/ark/MAB/pubmate/pubmate_looper.log)
 exec 2>&1
 
 ## Debugging information
@@ -26,23 +26,24 @@ conda activate base  # Activate the base environment where `boto3` is installed
 
 KEY=$1
 ID=$KEY
-DIR=/home/ark/MAB/magiclamp/${ID}
-OUT=/home/ark/MAB/magiclamp/completed/${ID}-results
+DIR=/home/ark/MAB/pubmate/${ID}
+OUT=/home/ark/MAB/pubmate/completed/${ID}-results
 
 
 name=$(grep 'Name' ${DIR}/form-data.txt | cut -d ' ' -f2)
 email=$(grep 'Email' ${DIR}/form-data.txt | cut -d ' ' -f2)
-option=$(grep 'Option' ${DIR}/form-data.txt | cut -d ' ' -f2)
-echo $option
+task=$(grep 'Tab' ${DIR}/form-data.txt | cut -d ' ' -f2)
+
+
 
 # Verify email
-result=$(python3 /home/ark/MAB/bin/magiclamp-local/check_email.py --email ${email})
+result=$(python3 /home/ark/MAB/bin/pubmate-local/check_email.py --email ${email})
 echo $result
 
 # Set PATH to include Conda and script locations
-export PATH="/home/ark/miniconda3/bin:/usr/local/bin:/usr/bin:/bin:/home/ark/MAB/bin/magiclamp-local:$PATH"
+export PATH="/home/ark/miniconda3/bin:/usr/local/bin:/usr/bin:/bin:/home/ark/MAB/bin/pubmate-local:$PATH"
 eval "$(/home/ark/miniconda3/bin/conda shell.bash hook)"
-conda activate magiclamp
+conda activate pubmate
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to activate Conda environment."
@@ -50,36 +51,28 @@ if [ $? -ne 0 ]; then
 fi
 sleep 5
 
-# Rename files
-for file in ${DIR}/*.f*; do
-    [[ ${file} == ${DIR}/form-data.txt ]] || mv ${file} ${file%.*}.fa
-    /home/ark/MAB/bin/BagOfTricks/header-format.py -file ${file%.*}.fa -out ${file%.*}.fxa -char '|' -rep '-'
-done
 
-if [[ ${option} == "Custom" ]]; then
-    mkdir ${DIR}/HMMs
-    mv ${DIR}/*.hmm ${DIR}/HMMs/
-    mv ${DIR}/*.HMM ${DIR}/HMMs/
-
-    for file in ${DIR}/HMMs/*; do
-      mv ${file} ${file%.*}.hmm
-  done
-
-    echo /home/ark/bin/MAB/MagicLamp/MagicLamp.py HmmGenie -bin_dir ${DIR} -bin_ext fxa -out ${OUT} -t 4 -hmm_dir ${DIR}/HMMs -hmm_ext hmm
-    /home/ark/MAB/bin/MagicLamp/MagicLamp.py HmmGenie -bin_dir ${DIR} -bin_ext fxa -out ${OUT} -t 4 -hmm_dir ${DIR}/HMMs -hmm_ext hmm
-#elif [[ ${option} =~ ^(Custom|Option1|Option2)$ ]]; then
-#    echo /home/ark/bin/MagicLamp/MagicLamp.py ${option} -bin_dir ${DIR} -bin_ext fxa -out ${OUT} -t 4 --all_results
-#    /home/ark/MAB/bin/MagicLamp/MagicLamp.py ${option} -bin_dir ${DIR} -bin_ext fxa -out ${OUT} -t 4 --all_results
+if [[ ${task} == "topic" ]]; then
+    keywords=$(grep 'Keywords' ${DIR}/form-data.txt | cut -d ' ' -f2)
+    question=$(grep 'Question' ${DIR}/form-data.txt | cut -d ' ' -f2-)
+    echo /home/ark/MAB/bin/pubmate-local/GetTheGist.py --keywords "${keywords}" --question "${question}" --output1 ${OUT}/abstracts.pdf ----output2 ${OUT}/gpt_says.pdf
+    /home/ark/MAB/bin/pubmate-local/GetTheGist.py --keywords "${keywords}" --question "${question}" --output1 ${OUT}/abstracts.pdf ----output2 ${OUT}/gpt_says.pdf
+elif [[ ${task} == 'author' ]]; then
+    first=$(grep 'First' ${DIR}/form-data.txt | cut -d ' ' -f2)
+    middle=$(grep 'Middle' ${DIR}/form-data.txt | cut -d ' ' -f2)
+    last=$(grep 'Last' ${DIR}/form-data.txt | cut -d ' ' -f2)
+    topic=$(grep 'Topic' ${DIR}/form-data.txt | cut -d ' ' -f2-)
+    echo /home/ark/MAB/bin/pubmate-local/pubcard.py --first "${first}" --middle "${middle}" --last "${last}" --topic "${topic}"--outputImage ${OUT}/pubcard.png --outputStats ${OUT}/pubcard.pdf --output ${OUT}/papers.pdf
+    /home/ark/MAB/bin/pubmate-local/pubcard.py --first "${first}" --middle "${middle}" --last "${last}" --topic "${topic}"--outputImage ${OUT}/pubcard.png --outputStats ${OUT}/pubcard.pdf --output ${OUT}/papers.pdf
 else
-    echo /home/ark/MAB/bin/MagicLamp/MagicLamp.py ${option} -bin_dir ${DIR} -bin_ext fxa -out ${OUT} -t 4
-    /home/ark/MAB/bin/MagicLamp/MagicLamp.py ${option} -bin_dir ${DIR} -bin_ext fxa -out ${OUT} -t 4
+    echo "--- Invalid task: ${task}"
 fi
 
 # **************************************************************************************************
 # **************************************************************************************************
 # **************************************************************************************************
 if [ $? -ne 0 ]; then
-    echo "Error: MagicLamp failed."
+    echo "Error: PubMate failed."
     conda deactivate
     exit 1
 fi
@@ -87,34 +80,30 @@ conda deactivate
 sleep 5
 
 # Archive results
-mv /home/ark/MAB/magiclamp/completed/${ID}-results ./${ID}-results
+mv /home/ark/MAB/pubmate/completed/${ID}-results ./${ID}-results
 tar -cf ${ID}-results.tar ${ID}-results && gzip ${ID}-results.tar
 
 # Upload results to S3 and generate presigned URL
 results_tar="${ID}-results.tar.gz"
 s3_key="${ID}-results.tar.gz"
-python3 /home/ark/MAB/bin/magiclamp-local/push.py --bucket binfo-dump --output_key ${s3_key} --source ${results_tar}
-url=$(python3 /home/ark/MAB/bin/magiclamp-local/gen_presign_url.py --bucket binfo-dump --key ${s3_key} --expiration 86400)
+python3 /home/ark/MAB/bin/pubmate-local/push.py --bucket binfo-dump --output_key ${s3_key} --source ${results_tar}
+url=$(python3 /home/ark/MAB/bin/pubmate-local/gen_presign_url.py --bucket binfo-dump --key ${s3_key} --expiration 86400)
 
-mv ${ID}-results.tar.gz /home/ark/MAB/magiclamp/completed/${ID}-results.tar.gz
+mv ${ID}-results.tar.gz /home/ark/MAB/pubmate/completed/${ID}-results.tar.gz
 
 # Send email
-python3 /home/ark/MAB/bin/magiclamp-local/send_email.py \
+python3 /home/ark/MAB/bin/pubmate-local/send_email.py \
     --sender ark@midauthorbio.com \
     --recipient ${email} \
-    --subject "Your MagicLamp Results!" \
+    --subject "Your PubMate Results!" \
     --body "Hi ${name},
 
-    Your MagicLamp results are available for download using the link below. The link will expire in 24 hours.
+    Your PubMate results are available for download using the link below. The link will expire in 24 hours.
 
     ${url}
 
-    Please visit https://github.com/Arkadiy-Garber/MagicLamp for documentation.
-
-    Please reach out to ark@midauthorbio.com, or send us a note on https://midauthorbio.com/#contact if you have any questions.
-
     Thanks!
-    MAB Team"
+    Ark"
 
 if [ $? -ne 0 ]; then
     echo "Error: send_email.py failed."
@@ -127,7 +116,7 @@ sleep 5
 #sudo rm -rf ${DIR}
 
 conda deactivate
-echo "MagicLamp completed successfully."
+echo "PubMate completed successfully."
 
 
 
