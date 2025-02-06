@@ -19,7 +19,7 @@ from PyPDF2 import PdfReader
 from reportlab.platypus import Paragraph, SimpleDocTemplate, PageBreak, Spacer
 
 apikey = open("/home/ark/MAB/bin/openai_apikey.txt", "r").read().strip()
-
+print(apikey)
 client2 = OpenAI(api_key=apikey)
 
 def save_to_pdf(results, output_file):
