@@ -18,10 +18,9 @@ from reportlab.lib import colors
 from PyPDF2 import PdfReader
 from reportlab.platypus import Paragraph, SimpleDocTemplate, PageBreak, Spacer
 
+apikey = open("/home/ark/MAB/bin/openai_apikey.txt", "r").read().strip()
 
-
-# openai.api_key = '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'
-client2 = OpenAI(api_key='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')
+client2 = OpenAI(api_key=apikey)
 
 def save_to_pdf(results, output_file):
     """ Save PubMed results to a PDF file, ensuring each article starts on a new page """

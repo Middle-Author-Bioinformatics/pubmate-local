@@ -29,12 +29,11 @@ ID=$KEY
 DIR=/home/ark/MAB/pubmate/${ID}
 OUT=/home/ark/MAB/pubmate/completed/${ID}-results
 
+mkdir ${OUT}
 
 name=$(grep 'Name' ${DIR}/form-data.txt | cut -d ' ' -f2)
 email=$(grep 'Email' ${DIR}/form-data.txt | cut -d ' ' -f2)
 task=$(grep 'Tab' ${DIR}/form-data.txt | cut -d ' ' -f2)
-
-
 
 # Verify email
 result=$(python3 /home/ark/MAB/bin/pubmate-local/check_email.py --email ${email})
@@ -55,8 +54,8 @@ sleep 5
 if [[ ${task} == "topic" ]]; then
     keywords=$(grep 'Keywords' ${DIR}/form-data.txt | cut -d ' ' -f2)
     question=$(grep 'Question' ${DIR}/form-data.txt | cut -d ' ' -f2-)
-    echo /home/ark/MAB/bin/pubmate-local/GetTheGist.py --keywords "${keywords}" --question "${question}" --output1 ${OUT}/abstracts.pdf ----output2 ${OUT}/gpt_says.pdf
-    /home/ark/MAB/bin/pubmate-local/GetTheGist.py --keywords "${keywords}" --question "${question}" --output1 ${OUT}/abstracts.pdf --output2 ${OUT}/gpt_says.pdf
+    echo /home/ark/MAB/bin/pubmate-local/GetTheGist.py --keywords '"${keywords}"' --question '"${question}"' --output1 ${OUT}/abstracts.pdf ----output2 ${OUT}/gpt_says.pdf
+    /home/ark/MAB/bin/pubmate-local/GetTheGist.py --keywords '"${keywords}"' --question '"${question}"' --output1 ${OUT}/abstracts.pdf --output2 ${OUT}/gpt_says.pdf
 elif [[ ${task} == 'author' ]]; then
     first=$(grep 'First' ${DIR}/form-data.txt | cut -d ' ' -f2)
     middle=$(grep 'Middle' ${DIR}/form-data.txt | cut -d ' ' -f2)
