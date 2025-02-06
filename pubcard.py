@@ -21,9 +21,9 @@ from reportlab.lib import colors
 from PyPDF2 import PdfReader
 import base64
 
-# openai.api_key = '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'
-client = OpenAI(api_key='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')
-
+apikey = open("/home/ark/MAB/bin/openai_apikey.txt", "r").read().strip()
+print(apikey)
+client = OpenAI(api_key=apikey)
 
 def generate_author_variations(last_name, first_name, middle_initial=""):
     """
@@ -130,7 +130,7 @@ def extract_abstracts_from_pdf(pdf_path, last_name, first_name, middle_initial="
 
 def summarize_in_batches(abstracts, batch_size=3):
     """ Summarizes abstracts in smaller batches to avoid token limits. """
-    summaries = []
+    summary = ''
     abstract_list = abstracts.split("\n\n")  # Split abstracts into individual items
 
     for i in range(0, len(abstract_list), batch_size):
@@ -143,7 +143,7 @@ def summarize_in_batches(abstracts, batch_size=3):
                     {"role": "system", "content": "Summarize the following abstracts into key research themes."},
                     {"role": "user", "content": batch}
                 ],
-                max_tokens=500  # Keep responses short
+                max_tokens=5000  # Keep responses short
             )
             summaries.append(response.choices[0].message.content.strip())
 
