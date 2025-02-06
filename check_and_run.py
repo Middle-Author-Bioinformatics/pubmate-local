@@ -7,8 +7,8 @@ import subprocess
 
 # S3 bucket name and folder prefix
 BUCKET_NAME = 'breseqbucket'
-FOLDER_PREFIX = 'magiclamp-'
-LOG_FILE = '/home/ark/MAB/magiclamp/processed_folders.log'
+FOLDER_PREFIX = 'pubmate-'
+LOG_FILE = '/home/ark/MAB/pubmate/processed_folders.log'
 
 # Initialize S3 client (using default credentials)
 s3 = boto3.client('s3')
@@ -77,17 +77,17 @@ def download_folder(bucket_name, folder_name, local_dir):
 
 def process_folder(folder_name):
     """Process the folder by downloading its contents and performing analysis."""
-    local_dir = f"/home/ark/MAB/magiclamp/{folder_name}"
+    local_dir = f"/home/ark/MAB/pubmate/{folder_name}"
     print(f"Processing folder: {folder_name}")
     download_folder(BUCKET_NAME, folder_name, local_dir)
 
-    # Run magiclamp.sh script with folder_name as argument
-    magiclamp_script_path = '/home/ark/MAB/bin/magiclamp-local/magiclamp.sh'
+    # Run pubmate.sh script with folder_name as argument
+    pubmate_script_path = '/home/ark/MAB/bin/pubmate-local/pubmate.sh'
     try:
-        subprocess.run([magiclamp_script_path, folder_name], check=True)
-        print(f"Successfully processed folder {folder_name} using magiclamp.sh.")
+        subprocess.run([pubmate_script_path, folder_name], check=True)
+        print(f"Successfully processed folder {folder_name} using pubmate.sh.")
     except subprocess.CalledProcessError as e:
-        print(f"Error running magiclamp.sh on folder {folder_name}: {e}")
+        print(f"Error running pubmate.sh on folder {folder_name}: {e}")
 
 def main():
     """Main function to check for new folders and trigger processing."""
